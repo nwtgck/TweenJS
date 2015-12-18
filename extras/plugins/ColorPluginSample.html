@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ColorTween</title>
+    <style>
+        div {
+            font-size: 44px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Body Elements -->
+<canvas id="canvas" width="500" height="100"></canvas>
+<div id="domText" style="color:#00ff00">I am DOM text</div>
+<input type="button" id="toggle" value="Change Color" onclick="changeColor()" />
+<input type="button" id="toggle" value="Toggle Mode to HSL" onclick="toggleMode()" />
+
+<!-- Scripts -->
+<script src="https://code.createjs.com/tweenjs-0.6.2.min.js"></script>
+<script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
+<script src="ColorPlugin.js"></script>
+<script>
+    var stage = new createjs.Stage("canvas");
+    createjs.Ticker.on("tick", stage);
+
+    createjs.ColorPlugin.install();
+
+    var shape = new createjs.Shape()
+            .set(new createjs.Point(50, 50));
+    var fillCommand = shape.graphics.f("#00ff00").command;
+    shape.graphics.dc(0, 0, 50);
+    var canvasText = new createjs.Text("I am Canvas Text", "bold 44px Arial", "#00ff00")
+            .set(new createjs.Point(120, 25));
+    stage.addChild(shape, canvasText);
+
+    var text = document.getElementById("domText");
+
+    function changeColor(duration) {
+        var newColor = createjs.Graphics.getRGB(
+            Math.random()*255|0,
+            Math.random()*255|0,
+            Math.random()*255|0);
+        console.log("Set to", newColor);
+
+        // Tween the EaselJS command
+        createjs.Tween.get(fillCommand, {override:true})
+                .to({style: newColor}, 2500, createjs.Ease.bounceOut);
+        // Tween the EaselJS Text
+        createjs.Tween.get(canvasText, {override:true})
+                .to({color: newColor}, 2500, createjs.Ease.bounceOut);
+
+        // Tween the DOM style (better with CSS transitions)
+        createjs.Tween.get(text.style, {override:true})
+                .to({color: newColor}, 2500, createjs.Ease.bounceOut);
+    };
+
+    // Initial tween
+    changeColor(3000);
+
+    function toggleMode() {
+        var mode = createjs.ColorPlugin.mode;
+        createjs.ColorPlugin.mode = (mode == "hsl") ? "rgb" : "hsl";
+        document.getElementById("toggle").value = "Toggle Mode to " + mode.toUpperCase();
+
+    }
+</script>
+</body>
+</html>

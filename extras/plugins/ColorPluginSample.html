@@ -9,6 +9,15 @@
             font-weight: bold;
             font-family: Arial, sans-serif;
         }
+        a {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: grey;
+        }
+        body {
+            background: url("128-196.jpg");
+        }
     </style>
 </head>
 <body>
@@ -16,8 +25,14 @@
 <!-- Body Elements -->
 <canvas id="canvas" width="500" height="100"></canvas>
 <div id="domText" style="color:#00ff00">I am DOM text</div>
-<input type="button" id="toggle" value="Change Color" onclick="changeColor()" />
+<input type="button" id="change" value="Change Color" onclick="changeColor()" />
 <input type="button" id="toggle" value="Toggle Mode to HSL" onclick="toggleMode()" />
+<div>
+    <a data-color="#f00"></a>
+    <a data-color="#0000ff"></a>
+    <a data-color="rgba(255,128,0, 0.5)"></a>
+    <a data-color="hsl(250,50%,50%)"></a>
+</div>
 
 <!-- Scripts -->
 <script src="https://code.createjs.com/tweenjs-0.6.2.min.js"></script>
@@ -39,11 +54,12 @@
 
     var text = document.getElementById("domText");
 
-    function changeColor(duration) {
-        var newColor = createjs.Graphics.getRGB(
+    function changeColor(color) {
+        var newColor = color || createjs.Graphics.getRGB(
             Math.random()*255|0,
             Math.random()*255|0,
-            Math.random()*255|0);
+            Math.random()*255|0,
+            (Math.random() * 0.75 + 0.25).toFixed(2));
         console.log("Set to", newColor);
 
         // Tween the EaselJS command
@@ -59,13 +75,22 @@
     };
 
     // Initial tween
-    changeColor(3000);
+    //changeColor();
 
     function toggleMode() {
         var mode = createjs.ColorPlugin.mode;
         createjs.ColorPlugin.mode = (mode == "hsl") ? "rgb" : "hsl";
         document.getElementById("toggle").value = "Toggle Mode to " + mode.toUpperCase();
+    }
 
+    var tags = document.querySelectorAll("a");
+    for (var i= 0, l=tags.length; i<l; i++) {
+        var tag = tags[i];
+        tag.addEventListener("click", function(event) {
+            changeColor(event.target.getAttribute("data-color"));
+
+        });
+        tag.style.backgroundColor = tag.getAttribute("data-color");
     }
 </script>
 </body>

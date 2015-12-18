@@ -27,7 +27,7 @@
 */
 (function (scope) {
 
-	function rgbToHsl(r, g, b) {
+	function rgbToHsl(r, g, b, a) {
 		var m = 1 / 255;
 		r *= m, g *= m, b *= m;
 		var max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -51,10 +51,11 @@
 			}
 			h /= 6;
 		}
-		return [h*360, s*100, l*100];
+		if (a == null) { a == 1; }
+		return [h*360, s*100, l*100, a];
 	}
 
-	function hslToRgb(h, s, l) {
+	function hslToRgb(h, s, l, a) {
 		h /= 360; s /=100; l/=100;
 		var r, g, b;
 		if (s == 0) {
@@ -85,7 +86,8 @@
 			g = hue2rgb(p, q, h);
 			b = hue2rgb(p, q, h - 1 / 3);
 		}
-		return [r * 255, g * 255, b * 255];
+		if (a == null) { a == 1; }
+		return [r * 255, g * 255, b * 255, a];
 	}
 
 	/**
@@ -109,7 +111,7 @@
 	 * @static
 	 * @protected
 	 */
-	s.HSL_COLOR = /^hsl\(([0-9.]+), ?([0-9.]+)%?, ?([0-9.]+)%?\)$/i;
+	s.HSL_COLOR = /hsla?\(([0-9.]+), ?([0-9.]+)%?, ?([0-9.]+)%?(?:, ?([0-9.]+))?\)/i;
 	/**
 	 * The RegExp pattern that matches rgb color strings, with groups for each value.
 	 * Note there is no rgba support
@@ -118,7 +120,7 @@
 	 * @static
 	 * @protected
 	 */
-	s.RGB_COLOR = /^rgba?\((\d{1,3}), ?(\d{1,3}), ?(\d{1,3})\)$/i;
+	s.RGB_COLOR = /^rgba?\((\d{1,3}), ?(\d{1,3}), ?(\d{1,3})(?:, ?([0-9.]+))?\)$/i;
 	/**
 	 * The RegExp pattern that matches a 6-digit RGB string with a preceding #.
 	 * Note there is no rgba support
@@ -189,24 +191,26 @@
 	 * @static
 	 */
 	s.convertToHSL = function (value) {
-		var hsl, color, match = value.match(s.HSL_COLOR);
+		var hsl, color, alpha = 1,
+			match = value.match(s.HSL_COLOR);
 		if (match != null) {
 			return value;
 		} else if (match = value.match(s.RGB_COLOR)) {
+			if (match[4] != null) { alpha = match[4]; }
 			hsl = rgbToHsl(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
 		} else if (match = value.match(s.FULL_HEX)) {
 			color = parseInt(match[1], 16);
 			hsl = rgbToHsl(color >> 16, color >> 8 & 0xFF, color & 0xFF);
 		} else if (match = value.match(s.SHORT_HEX)) {
 			color = match[1];
-			var r = color.substr(1, 1),
-				g = color.substr(2, 1),
-				b = color.substr(3, 1);
+			var r = color.substr(0, 1),
+				g = color.substr(1, 1),
+				b = color.substr(2, 1);
 			hsl = rgbToHsl(parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16));
 		} else {
 			console.warn("Couldn't read color", value);
 		}
-		return "hsl(" + (hsl[0]+0.5|0) + "," + (hsl[1]+0.5|0) + "%," + (hsl[2]+0.5|0) + "%)";
+		return "hsla(" + (hsl[0]+0.5|0) + "," + (hsl[1]+0.5|0) + "%," + (hsl[2]+0.5|0) + "%," + alpha + ")";
 	};
 
 	/**
@@ -218,10 +222,11 @@
 	 * @static
 	 */
 	s.convertToRGB = function (value) {
-		var rgb, color, match = value.match(s.RGB_COLOR);
+		var rgb, color, alpha = 1, match = value.match(s.RGB_COLOR);
 		if (match != null) {
 			return value;
 		} else if (match = value.match(s.HSL_COLOR)) {
+			if (match[4] != null) { alpha = match[4]; }
 			rgb = hslToRgb(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
 		} else if (match = value.match(s.FULL_HEX)) {
 			color = parseInt(match[1], 16);
@@ -229,13 +234,13 @@
 		} else if (match = value.match(s.SHORT_HEX)) {
 			color = match[1];
 			var r = color.substr(0, 1),
-					g = color.substr(1, 1),
-					b = color.substr(2, 1);
+				g = color.substr(1, 1),
+				b = color.substr(2, 1);
 			rgb = [parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16)];
 		} else {
 			console.warn("Couldn't read color", value);
 		}
-		return "rgb(" + (rgb[0]+0.5|0) + "," + (rgb[1]+0.5|0) + "," + (rgb[2]+0.5|0) + ")";
+		return "rgba(" + (rgb[0]+0.5|0) + "," + (rgb[1]+0.5|0) + "," + (rgb[2]+0.5|0) + "," + alpha + ")";
 	};
 
 	/**
@@ -266,12 +271,13 @@
 
 		var a = (end[0] - start[0]) * ratio + start[0] + 0.5 | 0
 			b = (end[1] - start[1]) * ratio + start[1] + 0.5 | 0,
-			c = (end[2] - start[2]) * ratio + start[2] + 0.5 | 0;
+			c = (end[2] - start[2]) * ratio + start[2] + 0.5 | 0,
+			d = ((end[3] - start[3]) * ratio + start[3]).toFixed(2);
 
 		if (s.mode == "rgb") {
-			color = "rgb(" + a + "," + b + "," + c + ")";
+			color = "rgba(" + a + "," + b + "," + c + "," + d + ")";
 		} else if (s.mode == "hsl") {
-			color = "hsl(" + a + "," + b + "%," + c + "%)";
+			color = "hsla(" + a + "," + b + "%," + c + "%," + d + ")";
 		}
 		return color;
 	};
@@ -292,6 +298,7 @@
 			var color = s.convertToHSL(value);
 			var match = color.match(s.HSL_COLOR);
 		}
+		if (match[4] == null) { match[4] = 1; } // alpha
 		return match.slice(1).map(parseFloat);
 	};
 

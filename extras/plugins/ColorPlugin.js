@@ -228,9 +228,9 @@
 			rgb = [color >> 16, color >> 8 & 0xFF, color & 0xFF];
 		} else if (match = value.match(s.SHORT_HEX)) {
 			color = match[1];
-			var r = color.substr(1, 1),
-					g = color.substr(2, 1),
-					b = color.substr(3, 1);
+			var r = color.substr(0, 1),
+					g = color.substr(1, 1),
+					b = color.substr(2, 1);
 			rgb = [parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16)];
 		} else {
 			console.warn("Couldn't read color", value);

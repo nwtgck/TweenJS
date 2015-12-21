@@ -269,8 +269,14 @@
 		var end = s.getColor(endValues[prop]);
 		if (end == null) { return createjs.Tween.IGNORE; }
 
+		// Adjust start color to wrap nicely.
 		if (s.mode == "hsl") {
-			s.lock(start, end);
+			var startHue = start[0]% 360;
+			var endHue = end[0] = end[0] % 360;
+			var dif = startHue - endHue;
+			if (dif > 180) { startHue -= 360; }
+			else if (dif < -180) { startHue += 360; }
+			start[0] = startHue;
 		}
 
 		var a = (end[0] - start[0]) * ratio + start[0] + 0.5 | 0
@@ -284,15 +290,6 @@
 			color = "hsla(" + a + "," + b + "%," + c + "%," + d + ")";
 		}
 		return color;
-	};
-
-	s.lock = function(startColor, endColor) {
-		var start = startColor[0] = startColor[0] % 360;
-		var end = endColor[0] % 360;
-		var dif = start - end;
-		if (dif > 180) { end += 360; }
-		else if (dif < -180) { end -= 360; }
-		endColor[0] = end;
 	};
 
 	/**

@@ -111,7 +111,7 @@
 	 * @static
 	 * @protected
 	 */
-	s.HSL_COLOR = /hsla?\(([0-9.]+), ?([0-9.]+)%?, ?([0-9.]+)%?(?:, ?([0-9.]+))?\)/i;
+	s.HSL_COLOR = /hsla?\(([-0-9.]+), ?([0-9.]+)%?, ?([0-9.]+)%?(?:, ?([0-9.]+))?\)/i;
 	/**
 	 * The RegExp pattern that matches rgb color strings, with groups for each value.
 	 * Note there is no rgba support
@@ -269,6 +269,10 @@
 		var end = s.getColor(endValues[prop]);
 		if (end == null) { return createjs.Tween.IGNORE; }
 
+		if (s.mode == "hsl") {
+			s.lock(start, end);
+		}
+
 		var a = (end[0] - start[0]) * ratio + start[0] + 0.5 | 0
 			b = (end[1] - start[1]) * ratio + start[1] + 0.5 | 0,
 			c = (end[2] - start[2]) * ratio + start[2] + 0.5 | 0,
@@ -280,6 +284,15 @@
 			color = "hsla(" + a + "," + b + "%," + c + "%," + d + ")";
 		}
 		return color;
+	};
+
+	s.lock = function(startColor, endColor) {
+		var start = startColor[0] = startColor[0] % 360;
+		var end = endColor[0] % 360;
+		var dif = start - end;
+		if (dif > 180) { end += 360; }
+		else if (dif < -180) { end -= 360; }
+		endColor[0] = end;
 	};
 
 	/**

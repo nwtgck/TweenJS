@@ -56,7 +56,7 @@
 	}
 
 	function hslToRgb(h, s, l, a) {
-		h /= 360; s /=100; l/=100;
+		h = (h%360)/360; s /=100; l/=100;
 		var r, g, b;
 		if (s == 0) {
 			r = g = b = l; // achromatic

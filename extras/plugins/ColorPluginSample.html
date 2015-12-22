@@ -5,9 +5,14 @@
     <title>ColorTween</title>
     <style>
         div {
-            font-size: 44px;
             font-weight: bold;
             font-family: Arial, sans-serif;
+        }
+        #domText {
+            font-size: 44px;
+        }
+        .palette {
+            margin-top: 10px;
         }
         a {
             display: inline-block;
@@ -22,16 +27,41 @@
 </head>
 <body>
 
-<!-- Body Elements -->
+<!-- Colorized elements -->
 <canvas id="canvas" width="500" height="100"></canvas>
 <div id="domText" style="color:#00ff00">I am DOM text</div>
+
+<!-- Actions -->
 <input type="button" id="change" value="Change Color" onclick="changeColor()" />
 <input type="button" id="toggle" value="Toggle Mode to HSL" onclick="toggleMode()" />
-<div>
+
+<!-- Controls -->
+<div class="palette">
+    Duration: <input type="range" min="300" max="2500" id="duration" value="300" step="100" onchange="updateDuration()" />
+    <label id="duration-label">300</label>
+
+    <br />
+    Ease Function
+    <select id="easeFunction">
+        <option>linear</option>
+        <option>quadIn</option>
+        <option>quadOut</option>
+        <option>quadInOut</option>
+        <option>bounceOut</option>
+    </select>
+
+    <br /><br />
     <a data-color="#f00"></a>
     <a data-color="#0000ff"></a>
+    <a data-color="rgb(0,255,0)"></a>
+    <a data-color="rgba(255,0,255,0.5)"></a>RGB formats
+    <br />
     <a data-color="hsl(30,50%,50%)"></a>
-    <a data-color="hsl(330,50%,50%)"></a>
+    <a data-color="hsla(330,50%,50%,1)"></a> HSL Wrapping
+    <br />
+    <a data-color="hsl(-100,50%,50%)"></a>
+    <a data-color="hsl(1200,50%,50%)"></a> HSL out of range
+
 </div>
 
 <!-- Scripts -->
@@ -41,6 +71,7 @@
 <script>
     var stage = new createjs.Stage("canvas");
     createjs.Ticker.on("tick", stage);
+    createjs.Ticker.timingMode = createjs.Ticker.RAF;
 
     createjs.ColorPlugin.install();
 
@@ -62,20 +93,20 @@
             (Math.random() * 0.75 + 0.25).toFixed(2));
         console.log("Set to", newColor);
 
+        var tweenDuration = parseInt(document.getElementById("duration").value);
+        var easeFunction = createjs.Ease[document.getElementById("easeFunction").value];
+
         // Tween the EaselJS command
         createjs.Tween.get(fillCommand, {override:true})
-                .to({style: newColor}, 2500, createjs.Ease.bounceOut);
+                .to({style: newColor}, tweenDuration, easeFunction);
         // Tween the EaselJS Text
         createjs.Tween.get(canvasText, {override:true})
-                .to({color: newColor}, 2500, createjs.Ease.bounceOut);
+                .to({color: newColor}, tweenDuration, easeFunction);
 
         // Tween the DOM style (better with CSS transitions)
         createjs.Tween.get(text.style, {override:true})
-                .to({color: newColor}, 2500, createjs.Ease.bounceOut);
+                .to({color: newColor}, tweenDuration, easeFunction);
     };
-
-    // Initial tween
-    //changeColor();
 
     function toggleMode() {
         var mode = createjs.ColorPlugin.mode;
@@ -91,6 +122,11 @@
 
         });
         tag.style.backgroundColor = tag.getAttribute("data-color");
+    }
+
+    function updateDuration() {
+        var tweenDuration = parseInt(document.getElementById("duration").value);
+        document.getElementById("duration-label").innerHTML = tweenDuration;
     }
 </script>
 </body>

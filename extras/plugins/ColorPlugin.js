@@ -51,7 +51,7 @@
 			}
 			h /= 6;
 		}
-		if (a == null) { a == 1; }
+		if (a == null) { a = 1; }
 		return [h*360, s*100, l*100, a];
 	}
 
@@ -86,7 +86,7 @@
 			g = hue2rgb(p, q, h);
 			b = hue2rgb(p, q, h - 1 / 3);
 		}
-		if (a == null) { a == 1; }
+		if (a == null) { a = 1; }
 		return [r * 255, g * 255, b * 255, a];
 	}
 
@@ -173,9 +173,9 @@
 		if (value == null) {
 			return value;
 		} else if (s.mode == "rgb") {
-			color = s.convertToRGB(value);
+			color = s.convertToRGBString(value);
 		} else if (s.mode == "hsl") {
-			color = s.convertToHSL(value);
+			color = s.convertToHSLString(value);
 		} else {
 			return value;
 		}
@@ -183,21 +183,25 @@
 	};
 
 	/**
-	 * Convert the color string to HSL. This supports most CSS color values, such as `hsl(h,s,l)`, `rgb(r,g,b)`, `#f00`,
-	 * and `#ff0000`. Currently colors with alpha channel are not supported.
+	 * Convert the color string to HSLA. This supports most CSS color values, such as:
+	 	 * <ul><li>`hsl(h,s,l)`</li>
+	 	 * 	<li>`hsla(h,s,l,a)`</li>
+	 	 * 	<li>`rgb(r,g,b)`</li>
+	 	 * 	<li>`#f00`</li>
+	 	 * 	<li>`#ff0000`</li></ul>
+	 	 * Named colors are not supported.
 	 * @method convertToHSL
 	 * @param {String} value The color to convert.
-	 * @returns {String} An hsl color string
+	 * @returns {Array} An hsl color array. If the color can not be converted, it will return the original value.
 	 * @static
 	 */
 	s.convertToHSL = function (value) {
-		var hsl, color, alpha = 1,
+		var hsl, color,
 			match = value.match(s.HSL_COLOR);
 		if (match != null) {
-			return value;
+			hsl = match.slice(1);
 		} else if (match = value.match(s.RGB_COLOR)) {
-			if (match[4] != null) { alpha = match[4]; }
-			hsl = rgbToHsl(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+			hsl = rgbToHsl(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), parseFloat(match[4]));
 		} else if (match = value.match(s.FULL_HEX)) {
 			color = parseInt(match[1], 16);
 			hsl = rgbToHsl(color >> 16, color >> 8 & 0xFF, color & 0xFF);
@@ -209,25 +213,37 @@
 			hsl = rgbToHsl(parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16));
 		} else {
 			console.warn("Couldn't read color", value);
+			return value;
 		}
-		return "hsla(" + (hsl[0]+0.5|0) + "," + (hsl[1]+0.5|0) + "%," + (hsl[2]+0.5|0) + "%," + alpha + ")";
+		if (hsl[3] == null || isNaN(hsl[3])) { hsl[3] = 1; }
+		return hsl;
+	};
+	s.convertToHSLString = function(value) {
+		var hsla = s.convertToHSL(value);
+		if (typeof(hsla) != "array") { return value; }
+		return "hsla(" + (hsla[0]+0.5|0) + "," + (hsla[1]+0.5|0) + "%," + (hsla[2]+0.5|0) + "%," + hsla[3].toFixed(2) + ")";
 	};
 
 	/**
-	 * Convert the color string to RGB. This supports most CSS color values, such as `hsl(h,s,l)`, `rgb(r,g,b)`, `#f00`,
-	 * and `#ff0000`. Currently colors with alpha channel are not supported.
+	 * Convert the color string to RGBA. This supports most CSS color values, such as:
+	 * <ul><li>`hsl(h,s,l)`</li>
+	 * 	<li>`hsla(h,s,l,a)`</li>
+	 * 	<li>`rgb(r,g,b)`</li>
+	 * 	<li>`#f00`</li>
+	 * 	<li>`#ff0000`</li></ul>
+	 * Named colors are not supported.
 	 * @method convertToRGB
 	 * @param {String} value The color to convert.
-	 * @returns {String} An rgb color string
+	 * @returns {Array} An rgba color array. If the color can not be converted, it will return the original value.
 	 * @static
 	 */
 	s.convertToRGB = function (value) {
-		var rgb, color, alpha = 1, match = value.match(s.RGB_COLOR);
+		var rgb, color,
+				match = value.match(s.RGB_COLOR);
 		if (match != null) {
-			return value;
+			rgb = match.slice(1).map(parseFloat)
 		} else if (match = value.match(s.HSL_COLOR)) {
-			if (match[4] != null) { alpha = match[4]; }
-			rgb = hslToRgb(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+			rgb = hslToRgb(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), parseFloat(match[4]));
 		} else if (match = value.match(s.FULL_HEX)) {
 			color = parseInt(match[1], 16);
 			rgb = [color >> 16, color >> 8 & 0xFF, color & 0xFF];
@@ -239,8 +255,15 @@
 			rgb = [parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16)];
 		} else {
 			console.warn("Couldn't read color", value);
+			return value;
 		}
-		return "rgba(" + (rgb[0]+0.5|0) + "," + (rgb[1]+0.5|0) + "," + (rgb[2]+0.5|0) + "," + alpha + ")";
+		if (rgb[3] == null || isNaN(rgb[3])) { rgb[3] = 1; }
+		return rgb;
+	};
+	s.convertToRGBString = function(value) {
+		var rgba = s.convertToRGB(value);
+		if (typeof(rgba) != "array") { return value; }
+		return "rgba(" + (rgba[0]+0.5|0) + "," + (rgba[1]+0.5|0) + "," + (rgba[2]+0.5|0) + "," + rgba[3] + ")";
 	};
 
 	/**
@@ -303,13 +326,16 @@
 	s.getColor = function (value) {
 		if (s.mode == "rgb") {
 			var color = s.convertToRGB(value);
-			var match = color.match(s.RGB_COLOR); // returns pieces
 		} else if (s.mode == "hsl") {
 			var color = s.convertToHSL(value);
-			var match = color.match(s.HSL_COLOR);
 		}
-		if (match[4] == null) { match[4] = 1; } // alpha
-		return match.slice(1).map(parseFloat);
+		if (color[3] == null) { color[3] = 1; } // alpha
+		try {
+			color = color.map(parseFloat);
+		} catch(e) {
+			console.log("Error", e);
+		}
+		return color;
 	};
 
 	scope.ColorPlugin = ColorPlugin;
